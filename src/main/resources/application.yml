@@ -1,0 +1,54 @@
+spring:
+  application:
+    name: learn_ehcache_with_hibernate
+  datasource:
+    url: jdbc:mysql://localhost:3306/DbTest?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8
+    username: root
+    password: NumbMen221@love!
+    type: com.zaxxer.hikari.HikariDataSource
+    hikari:
+      minimum-idle: 1
+      maximum-pool-size: 100
+      auto-commit: true
+      idle-timeout: 30000
+      max-lifetime: 1800000
+      connection-timeout: 30000
+  jackson:
+    time-zone: GMT+8
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    open-in-view: true
+    database-platform: org.hibernate.dialect.MySQL5InnoDBDialect
+    properties:
+      hibernate:
+        # 将hibernate的统计打开
+        generate_statistics: true
+        format-sql: true
+        cache:
+          use_query_cache: true
+          use_second_level_cache: true
+          provider_class: org.hibernate.cache.EhCacheProvider
+          provider_configuration_file_resource_path: ehcache.xml
+          ehcache:
+            missing_cache_strategy: create
+          region:
+            factory_class: org.hibernate.cache.ehcache.SingletonEhCacheRegionFactory
+      javax:
+        persistence:
+          sharedCache:
+            mode: ENABLE_SELECTIVE
+            # 如果在配置文件中加入了 mode: ENABLE_SELECTIVE
+            # 则不需要在实体内配置hibernate的 @cache标记，
+            # 只要打上JPA的@cacheable标记即可默认开启该实体的2级缓存。
+            # ENABLE_SELECTIVE，默认值，除非被@Cacheable显式声明要缓存，否则默认不缓存
+            # DISABLE_SELECTIVE，除非被@Cacheable显式声明不缓存，否则默认缓存
+            # ALL，总是被缓存
+            # NONE，总是不缓存
+  cache:
+    type: ehcache
+    ehcache:
+      config: classpath:ehcache.xml
+server:
+  port: 10001

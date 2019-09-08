@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+CacheManager配置
+
+==========================
+
+一个ehcache.xml 相当于一个单个的CacheManager
+
+系统资源标识在这个文件中能被具体制定，当配置被加载时，他们将会被替换。
+例如 multicastGroupPort=${multicastGroupPort}被环境变量的系统属性替换，或
+是使用如-DmulticastGroupPort=4446命令行开关指定一个系统属性。
+
+
+<ehcache>的属性如下：
+
+
+    * name – CacheManager的可选名称。这个名称起初主要是用于文档记录或辨别Terracotta集群状态。
+    对于Terracotta集群的缓存，一组CacheManager名称和cache名称唯一的鉴定了一个特定的存储于
+    Terracotta集群存储器的缓存。
+
+
+    * updateCheck – 一个可选的boolean标识符，指定这个CacheManager是否通过Internet检查Ehcache的新版本。
+    如果没有特别指明，updateCheck="true".
+
+
+    * monitoring – 一个可选的设置，决定CacheManager是否应该自动的用系统MBean服务器注册SampledCacheMBean。
+    当下，这个监测。只有当使用Terracotta集群和使用Terracotta Developer Console时才有用。使用"autodetect"值，
+    Terracotta集群的出现将被检测和监视，并通过Developer控制台激活。其他允许的值有："on" 和 "off"。
+    默认为"autodetect"。当使用JMX监测时，这个设置不会产生任何作用。
+
+
+    * dynamicConfig – 一个可选设置，能够使与这个CacheManager相关联的动态配置失活。
+    这个设置的默认值是true-例如，动态配置是激活的。动态配置的缓存通过缓存的配置对象让他们的TTI, TTL
+    和maximum disk 和in-memory capacity在运行时改变。
+
+-->
+
+<ehcache name="HIBERNATE_CACHE" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="http://www.ehcache.org/ehcache.xsd"
+         updateCheck="false" monitoring="autodetect" dynamicConfig="true">
+
+    <!--
+    　　指定二级缓存存放在磁盘上的位置，可以使用磁盘目录，也可以使用Java System Property目录，
+        user.home是用户目录、user.dir是用户当前工作目录、java.io.tmpdir是默认临时文件路径
+    -->
+    <diskStore path="../cache/default"/>
+
+    <!--
+        这个类被ehcache用XA激活的ehcache来查找用于应用程序中的JTA TransactionManager。
+        如果没有指定类，那么DefaultTransactionManagerLookup将以如下顺序找到TransactionManager。
+    -->
+    <transactionManagerLookup
+            class="net.sf.ehcache.transaction.manager.DefaultTransactionManagerLookup"
+            properties="jndiName=java:/TransactionManager"
+            propertySeparator=";"/>
+
+    <!-- maxEntriesLocalHeap堆内存中最大缓存对象数,0没有限制(必须设置) -->
+    <!-- timeToIdleSeconds 当缓存闲置n秒后销毁 -->
+    <!-- timeToLiveSeconds 当缓存存活n秒后销毁 -->
+    <!-- eternal 永不销毁 -->
+    <defaultCache
+            maxEntriesLocalHeap="1000"
+            eternal="false"
+            timeToIdleSeconds="600"
+            timeToLiveSeconds="3600">
+        <!--<terracotta/>-->
+    </defaultCache>
+
+    <!--
+    缓存配置 可以给每个实体类指定一个配置文件，通过name属性指定，要使用类的全名
+           name:缓存名称。
+           maxElementsInMemory：缓存最大个数。
+           eternal: 对象是否永久有效，一但设置了，timeout将不起作用。
+           timeToIdleSeconds：设置对象在失效前的允许闲置时间（单位：秒）。
+                            仅当eternal=false对象不是永久有效时使用，可选属性，默认值是0，也就是可闲置时间无穷大。
+           timeToLiveSeconds：设置对象在失效前允许存活时间（单位：秒）。最大时间介于创建时间和失效时间之间。
+                            仅当eternal=false对象不是永久有效时使用，默认是0.，也就是对象存活时间无穷大。
+           overflowToDisk：当内存中对象数量达到maxElementsInMemory时，Ehcache将会对象写到磁盘中。
+           diskSpoolBufferSizeMB：这个参数设置DiskStore（磁盘缓存）的缓存区大小。默认是30MB。
+                                    每个Cache都应该有自己的一个缓冲区。
+           maxElementsOnDisk：硬盘最大缓存个数。
+           diskPersistent：是否缓存虚拟机重启期数据 Whether the disk store persists between restarts of the
+                            Virtual Machine. The default value is false.
+           diskExpiryThreadIntervalSeconds：磁盘失效线程运行时间间隔，默认是120秒。
+           memoryStoreEvictionPolicy：当达到maxElementsInMemory限制时，Ehcache将会根据指定的策略去清理内存。
+                                默认策略是LRU（最近最少使用）。你可以设置为FIFO（先进先出）或是LFU（较少使用）。
+           clearOnFlush：内存数量最大时是否清除。
+    -->
+    <cache name="entityCache"
+           maxEntriesLocalHeap="1000"
+           maxEntriesLocalDisk="10000"
+           eternal="false"
+           diskSpoolBufferSizeMB="20"
+           timeToIdleSeconds="600"
+           timeToLiveSeconds="3600"
+           memoryStoreEvictionPolicy="LFU"
+           transactionalMode="off">
+        <persistence strategy="localTempSwap"/>
+    </cache>
+
+    <cache name="default-query-results-region"
+           maxEntriesLocalHeap="5"
+           eternal="false"
+           timeToLiveSeconds="120">
+        <persistence strategy="localTempSwap"/>
+    </cache>
+
+    <cache name="org.hibernate.cache.spi.TimestampsCache"
+           maxEntriesLocalHeap="5000"
+           eternal="true">
+        <persistence strategy="localTempSwap"/>
+    </cache>
+
+</ehcache>
